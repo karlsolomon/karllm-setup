@@ -112,15 +112,16 @@ def setup_venv(project_path):
 
 
 def install_requirements(project_path):
-    pip_cmd = [
-        str(project_path / ".venv" / "bin" / "uv"),
-        "pip",
-        "install",
-        "-r",
-        "requirements.txt",
-    ]
-    subprocess.run(pip_cmd, cwd=project_path, check=True)
-    print("✔ Dependencies installed from requirements.txt")
+    # Activate venv by using .venv/bin/uv directly
+    uv_path = project_path / ".venv" / "bin" / "uv"
+    if not uv_path.exists():
+        sys.exit("❌ uv not found inside venv. Ensure uv venv worked correctly.")
+    subprocess.run(
+        [str(uv_path), "pip", "install", "-r", "requirements.txt"],
+        cwd=project_path,
+        check=True,
+    )
+    print("✔ Requirements installed using uv inside virtual environment")
 
 
 def main():
