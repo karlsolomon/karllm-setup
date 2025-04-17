@@ -6,47 +6,6 @@ import shutil
 import subprocess
 import sys
 
-
-
-# --- Bootstrap dependencies ---
-def bootstrap_dependencies():
-    import importlib.util
-    import shutil
-    import subprocess
-    import sys
-    import platform
-
-    def is_module_installed(name):
-        return importlib.util.find_spec(name) is not None
-
-    def install_if_missing(cmd, name):
-        if shutil.which(name) is None:
-            print(f"⏳ Installing required system package: {name}...")
-            subprocess.run(cmd, shell=True, check=True)
-        else:
-            print(f"✔ {name} already installed.")
-
-    # Detect OS and package manager
-    distro = platform.system()
-    if distro == "Linux":
-        if shutil.which("pacman"):
-            install_if_missing("sudo pacman -Sy --noconfirm rust uv", "rust")
-        elif shutil.which("apt"):
-            install_if_missing("sudo apt update && sudo apt install -y rustc cargo uv", "rustc")
-        elif shutil.which("dnf"):
-            install_if_missing("sudo dnf install -y rust cargo uv", "rustc")
-    elif distro == "Darwin":
-        install_if_missing("brew install rust uv", "rust")
-    elif distro == "Windows":
-        print("⚠ Please install Rust and uv manually on Windows.")
-    else:
-        print("⚠ Unknown platform, please install rust and uv manually.")
-
-    # Ensure PyYAML is installed as a Python module
-    if not is_module_installed("yaml"):
-        print("⏳ Installing required module: PyYAML...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "PyYAML"])
-
     print("✔ Script-level dependencies verified.")
 
 
@@ -170,26 +129,38 @@ def assert_commands_exist():
         if pkg == "pacman":
             install_cmds = {
                 "git": "sudo pacman -S git",
+                "rust": "sudo pacman -S rust",
                 "openssl": "sudo pacman -S openssl",
                 "python3": "sudo pacman -S python",
             }
         elif pkg == "apt":
             install_cmds = {
                 "git": "sudo apt install git",
+                "rust": "sudo apt install rust",
                 "openssl": "sudo apt install openssl",
                 "python3": "sudo apt install python3",
             }
         elif pkg == "dnf":
             install_cmds = {
                 "git": "sudo dnf install git",
+                "rust": "sudo dnf install rust",
                 "openssl": "sudo dnf install openssl",
                 "python3": "sudo dnf install python3",
             }
         elif pkg == "apk":
             install_cmds = {
                 "git": "apk add git",
+                "rust": "apk add rust",
                 "openssl": "apk add openssl",
                 "python3": "apk add python3",
+            }
+        elif pkg == "pkg":
+            install_cmds = {
+                "git": "pkg install git",
+                "rust": "pkg install rust",
+                "openssl": "pkg install openssl",
+                "openssh": "pkg install openssh",
+                "python3": "pkg install python3",
             }
         else:
             print("⚠ Unsupported or unknown Linux distro.")
