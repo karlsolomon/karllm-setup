@@ -26,8 +26,6 @@ def bootstrap_dependencies():
     print("✔ Script-level dependencies verified.")
 
 
-
-
 import platform
 from pathlib import Path
 
@@ -94,13 +92,14 @@ def get_linux_package_manager():
         else:
             return "unknown"
     except FileNotFoundError:
-        if platform.platform().contains("android") and platform.machine() == "aarch64": # Handle TERMUX
+        if (
+            platform.platform().contains("android") and platform.machine() == "aarch64"
+        ):  # Handle TERMUX
             return "pkg"
-        else
+        else:
             return "unknown"
     except Exception:
-        else
-            return "unknown"
+        return "unknown"
 
 
 def assert_commands_exist():
