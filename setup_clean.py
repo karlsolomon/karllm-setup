@@ -6,9 +6,6 @@ import shutil
 import subprocess
 import sys
 
-    print("✔ Script-level dependencies verified.")
-
-
 bootstrap_dependencies():
     import importlib.util
 
