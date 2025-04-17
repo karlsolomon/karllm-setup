@@ -13,11 +13,11 @@ def bootstrap_dependencies():
     def is_module_installed(name):
         return importlib.util.find_spec(name) is not None
 
-    # Ensure PyYAML
-    if not is_module_installed("yaml"):
-        print("⏳ Installing required module: PyYAML...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "PyYAML"])
-
+    # # Ensure PyYAML
+    # if not is_module_installed("yaml"):
+    #     print("⏳ Installing required module: PyYAML...")
+    #     subprocess.check_call([sys.executable, "-m", "pip", "install", "PyYAML"])
+    #
     # Ensure uv CLI exists
     if shutil.which("uv") is None:
         print("⏳ Installing required CLI tool: uv...")
