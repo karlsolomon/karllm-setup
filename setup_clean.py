@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 import os
+import platform
 import re
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 
 def bootstrap_dependencies():
@@ -25,11 +27,6 @@ def bootstrap_dependencies():
 
     print("✔ Script-level dependencies verified.")
 
-
-import platform
-from pathlib import Path
-
-import yaml
 
 IS_WINDOWS = platform.system() == "Windows"
 IS_MAC = platform.system() == "Darwin"
@@ -212,6 +209,8 @@ def ensure_config_dir():
 
 
 def write_config_file(config_path, uname, priv_key_path):
+    import yaml
+
     if config_path.exists():
         print(f"✔ Config file already exists at {config_path}")
         return
