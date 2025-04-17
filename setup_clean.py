@@ -6,7 +6,8 @@ import shutil
 import subprocess
 import sys
 
-bootstrap_dependencies():
+
+def bootstrap_dependencies():
     import importlib.util
 
     def is_module_installed(name):
@@ -25,7 +26,6 @@ bootstrap_dependencies():
     print("✔ Script-level dependencies verified.")
 
 
-bootstrap_dependencies()
 
 
 import platform
@@ -301,6 +301,7 @@ def get_username():
 
 
 def main():
+    bootstrap_dependencies()
     assert_env_vars()
     assert_commands_exist()
     ensure_python_version()
