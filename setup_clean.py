@@ -75,7 +75,8 @@ def get_bootstrap_cmd():
 
 def bootstrap_dependencies():
     cmd = get_bootstrap_cmd()
-    for dep, reqs in system_deps:
+    for dep in system_deps:
+        reqs = system_deps[dep]
         if not shutil.which(dep):
             print(f"Required system tool not found: {dep}. Trying to install...")
             for req in reqs:
