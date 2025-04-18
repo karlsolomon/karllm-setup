@@ -11,9 +11,9 @@ from pathlib import Path
 
 system_deps = {
     "git": ["git"],
-    "uv": ["uv"],
     "openssl": ["openssl", "openssl-tool"],
     "cargo": ["rust"],
+    "uv": ["uv"],
 }
 
 IS_WINDOWS = platform.system() == "Windows"
