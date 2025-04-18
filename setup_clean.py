@@ -277,16 +277,9 @@ def setup_venv(project_path):
 
 
 def install_requirements(project_path):
-    uv_path = (
-        project_path / ".venv" / "Scripts" / "uv"
-        if IS_WINDOWS
-        else project_path / ".venv" / "bin" / "uv"
-    )
-    if not uv_path.exists():
-        sys.exit("❌ uv not found inside venv. Ensure uv venv worked correctly.")
 
     subprocess.run(
-        [str(uv_path), "pip", "install", "-r", "requirements.txt"],
+        ["uv", "pip", "install", "-r", "requirements.txt"],
         cwd=project_path,
         check=True,
     )
