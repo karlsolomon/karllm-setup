@@ -318,15 +318,15 @@ def main():
         exit(1)
     assert_env_vars()
 
-    uname = get_username()
-    config_dir = ensure_config_dir()
-    priv_key_path, _ = generate_keypair(config_dir, uname)
-    write_config_file(config_dir / "karllm.conf", uname, priv_key_path)
-
     home = Path(os.environ["HOME"])
     project_path = clone_repo(home)
     setup_venv(project_path)
     install_requirements(project_path)
+
+    uname = get_username()
+    config_dir = ensure_config_dir()
+    priv_key_path, _ = generate_keypair(config_dir, uname)
+    write_config_file(config_dir / "karllm.conf", uname, priv_key_path)
 
     print("✅ Setup complete!")
 
