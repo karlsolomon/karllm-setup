@@ -75,7 +75,7 @@ def bootstrap_dependencies():
             print(f"Required system tool not found: {dep}. Trying to install...")
             for req in reqs:
                 print(f'🔧 Installing {req} with: "{cmd}{req}"')
-                status = subprocess.run([str(cmd), req], check=True)
+                status = subprocess.run(str(cmd + req), check=True)
                 if status != 0:
                     print(
                         f"❌ Failed to install {req}. Install with {cmd} {req} manually."
