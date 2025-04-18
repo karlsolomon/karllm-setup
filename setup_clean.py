@@ -49,17 +49,17 @@ def get_bootstrap_cmd():
         res = "brew install "
     elif system == "Linux":
         distro = get_linux_distro()
-        if distro is "arch":
+        if distro == "arch":
             res = "sudo pacman -S "
-        elif distro is "debian":
+        elif distro == "debian":
             res = "sudo apt install "
-        elif distro is "fedora":
+        elif distro == "fedora":
             res = "sudo dnf install "
-        elif distro is "alpine":
+        elif distro == "alpine":
             res = "apk add "
-        elif distro is "centos":
+        elif distro == "centos":
             res = "sudo yum install "
-        elif distro is "android":
+        elif distro == "android":
             res = "pkg install "
         else:
             print(
