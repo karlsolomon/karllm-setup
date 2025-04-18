@@ -273,6 +273,17 @@ def setup_venv(project_path):
         cwd=str(project_path),
         check=True,
     )
+    subprocess.run(
+        ["source", ".venv/bin/activate"],
+        cwd=str(project_path),
+        check=True,
+    )
+    subprocess.run(
+        ["uv", "venv", "pip", "install", "-r", "requirements.txt],
+        cwd=str(project_path),
+        check=True,
+    )
+
     print(f"✔ Virtual environment created with Python {PYTHON_VERSION}")
 
 
