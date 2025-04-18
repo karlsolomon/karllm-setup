@@ -68,20 +68,26 @@ def get_bootstrap_cmd():
 
 
 def bootstrap_dependencies():
+    is_all_good = True
     cmd = get_bootstrap_cmd()
     for dep in system_deps:
         reqs = system_deps[dep]
         if not shutil.which(dep):
-            print(f"Required system tool not found: {dep}. Trying to install...")
+            is_all_good = False
+            print(
+                f"Required system tool not found: {dep}. Unablae to install. Please run the following command(s) manually:"
+            )
             for req in reqs:
-                print(f'🔧 Installing {req} with: "{cmd}{req}"')
-                status = subprocess.run(str(cmd + req), check=True)
-                if status != 0:
-                    print(
-                        f"❌ Failed to install {req}. Install with {cmd} {req} manually."
-                    )
-                    exit(status)
-    print("✔ Script-level dependencies verified.")
+                print(f'🔧 Instal {req} with: "{cmd}{req}"')
+                # status = subprocess.run(str(cmd + req), check=True)
+                # if status != 0:
+                #     print(
+                #         f"❌ Failed to install {req}. Install with {cmd} {req} manually."
+                #     )
+                #     exit(status)
+    if is_all_good:
+        print("✔ System tools verified.")
+    return is_all_good
 
 
 def normalize_env():
@@ -308,7 +314,8 @@ def get_username():
 
 def main():
     normalize_env()
-    bootstrap_dependencies()
+    if not bootstrap_dependencies():
+        exit(1)
     assert_env_vars()
 
     uname = get_username()
