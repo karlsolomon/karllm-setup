@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import importlib.util
 import os
 import platform
 import re
@@ -8,29 +9,85 @@ import subprocess
 import sys
 from pathlib import Path
 
-
-def bootstrap_dependencies():
-    import importlib.util
-
-    def is_module_installed(name):
-        return importlib.util.find_spec(name) is not None
-
-    # # Ensure PyYAML
-    # if not is_module_installed("yaml"):
-    #     print("⏳ Installing required module: PyYAML...")
-    #     subprocess.check_call([sys.executable, "-m", "pip", "install", "PyYAML"])
-    #
-    # Ensure uv CLI exists
-    if shutil.which("uv") is None:
-        print("⏳ Installing required CLI tool: uv...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "uv"])
-
-    print("✔ Script-level dependencies verified.")
-
+system_deps = {
+    "git": ["git"],
+    "uv": ["uv"],
+    "openssl": ["openssl", "openssl-tool"],
+    "cargo": ["rust"],
+}
 
 IS_WINDOWS = platform.system() == "Windows"
 IS_MAC = platform.system() == "Darwin"
 IS_LINUX = platform.system() == "Linux"
+
+
+def is_module_installed(name):
+    return importlib.util.find_spec(name) is not None
+
+
+def get_linux_distro():
+    try:
+        with open("/etc/os-release") as f:
+            os_release = f.read().lower()
+            return os_release
+    except FileNotFoundError:
+        if (
+            platform.platform().contains("android") and platform.machine() == "aarch64"
+        ):  # Handle TERMUX
+            return "android"
+        else:
+            return "unknown"
+    except Exception:
+        return "unknown"
+
+
+def get_bootstrap_cmd():
+    res = ""
+    system = platform.system()
+    if system == "Windows":
+        res = "Install-Package -Name "
+    elif system == "Darwin":
+        res = "brew install "
+    elif system == "Linux":
+        distro = get_linux_distro()
+        if distro is "arch":
+            res = "sudo pacman -S "
+        elif distro is "debian":
+            res = "sudo apt install "
+        elif distro is "fedora":
+            res = "sudo dnf install "
+        elif distro is "alpine":
+            res = "apk add "
+        elif distro is "centos":
+            res = "sudo yum install "
+        elif distro is "android":
+            res = "pkg install "
+        else:
+            print(
+                "❌ Unsupported Linux distro. Please install the missing dependencies manually."
+            )
+    else:
+        print(
+            "❌ Unsupported distro. Please install the missing dependencies manually."
+        )
+
+        return res
+
+
+def bootstrap_dependencies():
+    cmd = get_bootstrap_cmd()
+    for dep, reqs in system_deps:
+        if not shutil.which(dep):
+            print(f"Required system tool not found: {dep}. Trying to install...")
+            for req in reqs:
+                print(f"🔧 Installing {req}")
+                status = subprocess.check_call([str(cmd), req])
+                if status != 0:
+                    print(
+                        f"❌ Failed to install {req}. Install with {cmd} {req} manually."
+                    )
+                    exit(status)
+    print("✔ Script-level dependencies verified.")
 
 
 def normalize_env():
@@ -54,14 +111,10 @@ def normalize_env():
 
     else:
         sys.exit(
-            "❌ Unsupported platform. This script only supports Linux, macOS, and Windows."
+            "❌ Unsupported platform. This script only supports Linux, macOS, Android and Windows."
         )
 
 
-normalize_env()
-
-
-REQUIRED_COMMANDS = ["git", "python3", "uv", "openssl"]
 PYTHON_VERSION = "3.12.9"
 REPO_URL = "https://github.com/karlsolomon/karllm-client.git"
 
@@ -71,32 +124,6 @@ def assert_env_vars():
         if var not in os.environ:
             sys.exit(f"Error: ${var} environment variable is not set.")
     print("✔ Environment variables set.")
-
-
-def get_linux_package_manager():
-    try:
-        with open("/etc/os-release") as f:
-            os_release = f.read().lower()
-
-        if "arch" in os_release:
-            return "pacman"
-        elif "debian" in os_release or "ubuntu" in os_release:
-            return "apt"
-        elif "fedora" in os_release or "rhel" in os_release:
-            return "dnf"
-        elif "alpine" in os_release:
-            return "apk"
-        else:
-            return "unknown"
-    except FileNotFoundError:
-        if (
-            platform.platform().contains("android") and platform.machine() == "aarch64"
-        ):  # Handle TERMUX
-            return "pkg"
-        else:
-            return "unknown"
-    except Exception:
-        return "unknown"
 
 
 def assert_commands_exist():
@@ -299,6 +326,7 @@ def get_username():
 
 
 def main():
+    normalize_env()
     bootstrap_dependencies()
     assert_env_vars()
     assert_commands_exist()
