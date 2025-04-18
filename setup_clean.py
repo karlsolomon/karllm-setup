@@ -29,13 +29,15 @@ def get_linux_distro():
     try:
         with open("/etc/os-release") as f:
             os_release = f.read().lower()
+            if os_release is None:
+                return "android"
             return os_release
-    except FileNotFoundError:
-        # Handle TERMUX
-        if "android" in platform.platform() and platform.machine() == "aarch64":
-            return "android"
-        else:
-            return "unknown"
+    # except FileNotFoundError:
+    #     # Handle TERMUX
+    #     if "android" in platform.platform() and platform.machine() == "aarch64":
+    #         return "android"
+    #     else:
+    #         return "unknown"
     except Exception:
         return "unknown"
 
