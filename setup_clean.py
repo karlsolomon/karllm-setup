@@ -31,9 +31,8 @@ def get_linux_distro():
             os_release = f.read().lower()
             return os_release
     except FileNotFoundError:
-        if (
-            platform.platform().contains("android") and platform.machine() == "aarch64"
-        ):  # Handle TERMUX
+        # Handle TERMUX
+        if "android" in platform.platform() and platform.machine() == "aarch64":
             return "android"
         else:
             return "unknown"
