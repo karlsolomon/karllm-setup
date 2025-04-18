@@ -115,7 +115,7 @@ def normalize_env():
         )
 
 
-PYTHON_VERSION = "3.12.9"
+PYTHON_VERSION = "3.12"
 REPO_URL = "https://github.com/karlsolomon/karllm-client.git"
 
 
