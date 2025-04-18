@@ -74,7 +74,7 @@ def bootstrap_dependencies():
         if not shutil.which(dep):
             print(f"Required system tool not found: {dep}. Trying to install...")
             for req in reqs:
-                print(f'🔧 Installing {req} with: "{cmd} {req}"')
+                print(f'🔧 Installing {req} with: "{cmd}{req}"')
                 status = subprocess.check_call([str(cmd), req])
                 if status != 0:
                     print(
