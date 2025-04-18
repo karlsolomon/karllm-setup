@@ -26,43 +26,35 @@ def is_module_installed(name):
 
 
 def get_linux_distro():
+    if "android" in platform.platform() and platform.machine() == "aarch64":
+        return "android"
     try:
         with open("/etc/os-release") as f:
             os_release = f.read().lower()
-            if os_release is None:
-                return "android"
             return os_release
-    # except FileNotFoundError:
-    #     # Handle TERMUX
-    #     if "android" in platform.platform() and platform.machine() == "aarch64":
-    #         return "android"
-    #     else:
-    #         return "unknown"
     except Exception:
         return "unknown"
 
 
 def get_bootstrap_cmd():
-    res = ""
-    system = platform.system()
-    if system == "Windows":
-        res = "Install-Package -Name "
-    elif system == "Darwin":
-        res = "brew install "
-    elif system == "Linux":
+    if IS_WINDOWS:
+        return "Install-Package -Name "
+    elif IS_MAC:
+        return "brew install "
+    elif IS_LINUX:
         distro = get_linux_distro()
         if distro == "arch":
-            res = "sudo pacman -S "
+            return "sudo pacman -S "
         elif distro == "debian":
-            res = "sudo apt install "
+            return "sudo apt install "
         elif distro == "fedora":
-            res = "sudo dnf install "
+            return "sudo dnf install "
         elif distro == "alpine":
-            res = "apk add "
+            return "apk add "
         elif distro == "centos":
-            res = "sudo yum install "
+            return "sudo yum install "
         elif distro == "android":
-            res = "pkg install "
+            return "pkg install "
         else:
             print(
                 "❌ Unsupported Linux distro. Please install the missing dependencies manually."
@@ -72,7 +64,7 @@ def get_bootstrap_cmd():
             "❌ Unsupported distro. Please install the missing dependencies manually."
         )
 
-        return res
+        return "unknown"
 
 
 def bootstrap_dependencies():
@@ -217,19 +209,6 @@ def assert_commands_exist():
     sys.exit("\n💥 Aborting setup due to missing tools.\n")
 
 
-def ensure_python_version():
-    print(f"🔍 Checking if Python {PYTHON_VERSION} is available...")
-    result = subprocess.run(
-        ["uv", "python", "find", f"{PYTHON_VERSION}"], capture_output=True, text=True
-    )
-    if PYTHON_VERSION not in result.stdout:
-        print(f"⏬ Python {PYTHON_VERSION} not found. Installing...")
-        subprocess.run(["uv", "python", "install", PYTHON_VERSION], check=True)
-        print(f"✔ Installed Python {PYTHON_VERSION}")
-    else:
-        print(f"✔ Python {PYTHON_VERSION} already available.")
-
-
 def ensure_config_dir():
     config_dir = Path(os.environ["XDG_CONFIG_HOME"]) / "karllm"
     config_dir.mkdir(parents=True, exist_ok=True)
@@ -331,8 +310,8 @@ def main():
     normalize_env()
     bootstrap_dependencies()
     assert_env_vars()
-    assert_commands_exist()
-    ensure_python_version()
+    # assert_commands_exist()
+    # ensure_python_version()
 
     uname = get_username()
     config_dir = ensure_config_dir()
