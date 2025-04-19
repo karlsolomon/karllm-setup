@@ -1,43 +1,93 @@
 #!/usr/bin/env python3
 
+import importlib.util
 import os
+import platform
 import re
 import shutil
 import subprocess
 import sys
-
-
-# --- Bootstrap dependencies ---
-def bootstrap_dependencies():
-    import importlib.util
-
-    def is_module_installed(name):
-        return importlib.util.find_spec(name) is not None
-
-    # Ensure PyYAML
-    if not is_module_installed("yaml"):
-        print("⏳ Installing required module: PyYAML...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "PyYAML"])
-
-    # Ensure uv CLI exists
-    if shutil.which("uv") is None:
-        print("⏳ Installing required CLI tool: uv...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "uv"])
-
-    print("✔ Script-level dependencies verified.")
-
-
-bootstrap_dependencies()
-
-
-import platform
 from pathlib import Path
 
-import yaml
+system_deps = {
+    "git": ["git"],
+    "openssl": ["openssl", "openssl-tool"],
+    "cargo": ["rust"],
+    "uv": ["uv"],
+}
 
 IS_WINDOWS = platform.system() == "Windows"
 IS_MAC = platform.system() == "Darwin"
 IS_LINUX = platform.system() == "Linux"
+
+
+def is_module_installed(name):
+    return importlib.util.find_spec(name) is not None
+
+
+def get_linux_distro():
+    if "android" in platform.platform() and platform.machine() == "aarch64":
+        return "android"
+    try:
+        with open("/etc/os-release") as f:
+            os_release = f.read().lower()
+            return os_release
+    except Exception:
+        return "unknown"
+
+
+def get_bootstrap_cmd():
+    if IS_WINDOWS:
+        return "Install-Package -Name "
+    elif IS_MAC:
+        return "brew install "
+    elif IS_LINUX:
+        distro = get_linux_distro()
+        if distro == "arch":
+            return "sudo pacman -S "
+        elif distro == "debian":
+            return "sudo apt install "
+        elif distro == "fedora":
+            return "sudo dnf install "
+        elif distro == "alpine":
+            return "apk add "
+        elif distro == "centos":
+            return "sudo yum install "
+        elif distro == "android":
+            return "pkg install "
+        else:
+            print(
+                "❌ Unsupported Linux distro. Please install the missing dependencies manually."
+            )
+    else:
+        print(
+            "❌ Unsupported distro. Please install the missing dependencies manually."
+        )
+
+        return "unknown"
+
+
+def bootstrap_dependencies():
+    is_all_good = True
+    cmd = get_bootstrap_cmd()
+    for dep in system_deps:
+        reqs = system_deps[dep]
+        if not shutil.which(dep):
+            is_all_good = False
+            print(
+                f"Required system tool not found: {dep}. Unablae to install. Please run the following command(s) manually:"
+            )
+            for req in reqs:
+                print(f'🔧 Instal {req} with: "{cmd}{req}"')
+                # status = subprocess.run(str(cmd + req), check=True)
+                # if status != 0:
+                #     print(
+                #         f"❌ Failed to install {req}. Install with {cmd} {req} manually."
+                #     )
+                #     exit(status)
+    if is_all_good:
+        print("✔ System tools verified.")
+    return is_all_good
 
 
 def normalize_env():
@@ -61,15 +111,11 @@ def normalize_env():
 
     else:
         sys.exit(
-            "❌ Unsupported platform. This script only supports Linux, macOS, and Windows."
+            "❌ Unsupported platform. This script only supports Linux, macOS, Android and Windows."
         )
 
 
-normalize_env()
-
-
-REQUIRED_COMMANDS = ["git", "python3", "uv", "openssl"]
-PYTHON_VERSION = "3.12.9"
+PYTHON_VERSION = "3.12"
 REPO_URL = "https://github.com/karlsolomon/karllm-client.git"
 
 
@@ -78,32 +124,6 @@ def assert_env_vars():
         if var not in os.environ:
             sys.exit(f"Error: ${var} environment variable is not set.")
     print("✔ Environment variables set.")
-
-
-def get_linux_package_manager():
-    try:
-        with open("/etc/os-release") as f:
-            os_release = f.read().lower()
-
-        if "arch" in os_release:
-            return "pacman"
-        elif "debian" in os_release or "ubuntu" in os_release:
-            return "apt"
-        elif "fedora" in os_release or "rhel" in os_release:
-            return "dnf"
-        elif "alpine" in os_release:
-            return "apk"
-        else:
-            return "unknown"
-    except FileNotFoundError:
-        if (
-            platform.platform().contains("android") and platform.machine() == "aarch64"
-        ):  # Handle TERMUX
-            return "pkg"
-        else:
-            return "unknown"
-    except Exception:
-        return "unknown"
 
 
 def assert_commands_exist():
@@ -129,26 +149,38 @@ def assert_commands_exist():
         if pkg == "pacman":
             install_cmds = {
                 "git": "sudo pacman -S git",
+                "rust": "sudo pacman -S rust",
                 "openssl": "sudo pacman -S openssl",
                 "python3": "sudo pacman -S python",
             }
         elif pkg == "apt":
             install_cmds = {
                 "git": "sudo apt install git",
+                "rust": "sudo apt install rust",
                 "openssl": "sudo apt install openssl",
                 "python3": "sudo apt install python3",
             }
         elif pkg == "dnf":
             install_cmds = {
                 "git": "sudo dnf install git",
+                "rust": "sudo dnf install rust",
                 "openssl": "sudo dnf install openssl",
                 "python3": "sudo dnf install python3",
             }
         elif pkg == "apk":
             install_cmds = {
                 "git": "apk add git",
+                "rust": "apk add rust",
                 "openssl": "apk add openssl",
                 "python3": "apk add python3",
+            }
+        elif pkg == "pkg":
+            install_cmds = {
+                "git": "pkg install git",
+                "rust": "pkg install rust",
+                "openssl": "pkg install openssl",
+                "openssh": "pkg install openssh",
+                "python3": "pkg install python3",
             }
         else:
             print("⚠ Unsupported or unknown Linux distro.")
@@ -183,19 +215,6 @@ def assert_commands_exist():
     sys.exit("\n💥 Aborting setup due to missing tools.\n")
 
 
-def ensure_python_version():
-    print(f"🔍 Checking if Python {PYTHON_VERSION} is available...")
-    result = subprocess.run(
-        ["uv", "python", "find", f"{PYTHON_VERSION}"], capture_output=True, text=True
-    )
-    if PYTHON_VERSION not in result.stdout:
-        print(f"⏬ Python {PYTHON_VERSION} not found. Installing...")
-        subprocess.run(["uv", "python", "install", PYTHON_VERSION], check=True)
-        print(f"✔ Installed Python {PYTHON_VERSION}")
-    else:
-        print(f"✔ Python {PYTHON_VERSION} already available.")
-
-
 def ensure_config_dir():
     config_dir = Path(os.environ["XDG_CONFIG_HOME"]) / "karllm"
     config_dir.mkdir(parents=True, exist_ok=True)
@@ -204,6 +223,8 @@ def ensure_config_dir():
 
 
 def write_config_file(config_path, uname, priv_key_path):
+    import yaml
+
     if config_path.exists():
         print(f"✔ Config file already exists at {config_path}")
         return
@@ -252,20 +273,13 @@ def setup_venv(project_path):
         cwd=str(project_path),
         check=True,
     )
+
     print(f"✔ Virtual environment created with Python {PYTHON_VERSION}")
 
 
 def install_requirements(project_path):
-    uv_path = (
-        project_path / ".venv" / "Scripts" / "uv"
-        if IS_WINDOWS
-        else project_path / ".venv" / "bin" / "uv"
-    )
-    if not uv_path.exists():
-        sys.exit("❌ uv not found inside venv. Ensure uv venv worked correctly.")
-
     subprocess.run(
-        [str(uv_path), "pip", "install", "-r", "requirements.txt"],
+        ["uv", "pip", "install", "-r", "requirements.txt"],
         cwd=project_path,
         check=True,
     )
@@ -292,19 +306,20 @@ def get_username():
 
 
 def main():
+    normalize_env()
+    if not bootstrap_dependencies():
+        exit(1)
     assert_env_vars()
-    assert_commands_exist()
-    ensure_python_version()
-
-    uname = get_username()
-    config_dir = ensure_config_dir()
-    priv_key_path, _ = generate_keypair(config_dir, uname)
-    write_config_file(config_dir / "karllm.conf", uname, priv_key_path)
 
     home = Path(os.environ["HOME"])
     project_path = clone_repo(home)
     setup_venv(project_path)
     install_requirements(project_path)
+
+    uname = get_username()
+    config_dir = ensure_config_dir()
+    priv_key_path, _ = generate_keypair(config_dir, uname)
+    write_config_file(config_dir / "karllm.conf", uname, priv_key_path)
 
     print("✅ Setup complete!")
 
